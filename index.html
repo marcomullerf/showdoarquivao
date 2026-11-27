@@ -1728,10 +1728,17 @@
 
   let QUESTOES = carregarBancoQuestoes();
 
+  function fetchComTimeout(url, options = {}, timeoutMs = 6000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+      .finally(() => clearTimeout(id));
+  }
+
   async function sincronizarQuestoesNuvem() {
     if (!CLOUD_QUESTOES_URL) return QUESTOES;
     try {
-      const res = await fetch(CLOUD_QUESTOES_URL + "?t=" + Date.now(), { cache: "no-store" });
+      const res = await fetchComTimeout(CLOUD_QUESTOES_URL + "?t=" + Date.now(), { cache: "no-store" }, 5000);
       if (!res.ok) return QUESTOES;
       const data = await res.json();
       let listaRemota = [];
@@ -1758,11 +1765,11 @@
 
     if (CLOUD_QUESTOES_URL) {
       try {
-        const resp = await fetch(CLOUD_QUESTOES_URL, {
+        const resp = await fetchComTimeout(CLOUD_QUESTOES_URL, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(QUESTOES)
-        });
+        }, 6000);
         if (!resp.ok) {
           const errText = await resp.text();
           alert("Erro ao gravar no Firebase (" + resp.status + "): " + errText);
@@ -1770,7 +1777,11 @@
         }
         return true;
       } catch (e) {
-        alert("Falha de rede ao salvar no Firebase: " + e.message);
+        if (e.name === "AbortError") {
+          alert("Tempo esgotado (6s) ao tentar conectar no Firebase. Verifique sua internet ou se o site está hospedado em HTTPS.");
+        } else {
+          alert("Falha de conexão ao salvar no Firebase: " + e.message);
+        }
         return false;
       }
     }
@@ -2307,17 +2318,17 @@
           erros: resultadoFinalAtual.erros,
           detalhes_json: JSON.stringify(resultadoFinalAtual.detalhes)
         };
-        const resp = await fetch(CLOUD_API_URL, {
+        const resp = await fetchComTimeout(CLOUD_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
-        });
+        }, 6000);
         if (!resp.ok) throw new Error("Erro HTTP " + resp.status);
         btnScore.textContent = "✅ Score enviado para a nuvem do professor!";
         return;
       } catch (e) {
         console.warn("Falha ao enviar para Firebase:", e);
-        btnScore.textContent = "✅ Salvo localmente (verifique regras do Firebase)";
+        btnScore.textContent = "✅ Salvo localmente (verifique conexão)";
         return;
       }
     }
@@ -2383,7 +2394,7 @@
     if (CLOUD_API_URL && CLOUD_API_URL.trim() !== "") {
       statusMsg.textContent = "☁️ Buscando scores no Firebase...";
       try {
-        const res = await fetch(CLOUD_API_URL + "?t=" + Date.now(), { cache: "no-store" });
+        const res = await fetchComTimeout(CLOUD_API_URL + "?t=" + Date.now(), { cache: "no-store" }, 6000);
         if (!res.ok) throw new Error("Erro HTTP " + res.status);
         const data = await res.json();
         let remotos = [];
@@ -2398,7 +2409,7 @@
         })).sort((a, b) => (b.id || 0) - (a.id || 0));
         statusMsg.textContent = "☁️ Conectado ao Firebase: exibindo resultados de todos os dispositivos.";
       } catch (e) {
-        statusMsg.textContent = "⚠️ Não foi possível ler do Firebase (verifique as regras de leitura/escrita). Exibindo registros locais.";
+        statusMsg.textContent = "⚠️ Não foi possível ler do Firebase (verifique conexão). Exibindo registros locais.";
       }
     }
 
@@ -2452,7 +2463,7 @@
           <div style="font-size:0.85rem; color:#cfe0ff;">
             ${q.alternativas.map((alt, i) =>
               `<span style="${i === q.correta ? 'color:#00e676; font-weight:700;' : ''}">${i + 1}) ${alt}</span>`
-            ).join("  |  ")}
+            ).join(" &nbsp;|&nbsp; ")}
           </div>
         </div>
         <div class="bank-item-actions">
@@ -2487,36 +2498,38 @@
       btnSalvar.textContent = "⏳ Salvando...";
     }
 
-    const novaQuestao = {
-      numero: editIdx >= 0 ? editIdx + 1 : QUESTOES.length + 1,
-      rodada,
-      enunciado,
-      alternativas: [alt0, alt1, alt2, alt3],
-      correta,
-      acertou,
-      parou,
-      errar
-    };
+    try {
+      const novaQuestao = {
+        numero: editIdx >= 0 ? editIdx + 1 : QUESTOES.length + 1,
+        rodada,
+        enunciado,
+        alternativas: [alt0, alt1, alt2, alt3],
+        correta,
+        acertou,
+        parou,
+        errar
+      };
 
-    if (editIdx >= 0) {
-      QUESTOES[editIdx] = novaQuestao;
-    } else {
-      QUESTOES.push(novaQuestao);
-    }
+      if (editIdx >= 0) {
+        QUESTOES[editIdx] = novaQuestao;
+      } else {
+        QUESTOES.push(novaQuestao);
+      }
 
-    const salvouNuvem = await salvarBancoQuestoes();
-    limparFormularioBanco();
-    renderizarBancoPerguntas();
+      const salvouNuvem = await salvarBancoQuestoes();
+      limparFormularioBanco();
+      renderizarBancoPerguntas();
 
-    if (btnSalvar) {
-      btnSalvar.disabled = false;
-      btnSalvar.textContent = "💾 Salvar Pergunta";
-    }
-
-    if (salvouNuvem) {
-      alert("✅ Pergunta salva e sincronizada com todos os dispositivos!");
-    } else {
-      alert("⚠️ Pergunta salva localmente, mas não foi possível gravar no Firebase.");
+      if (salvouNuvem) {
+        alert("✅ Pergunta salva e sincronizada com todos os dispositivos!");
+      } else {
+        alert("⚠️ Pergunta salva localmente neste aparelho, mas não gravou na nuvem.");
+      }
+    } finally {
+      if (btnSalvar) {
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = "💾 Salvar Pergunta";
+      }
     }
   }
 
