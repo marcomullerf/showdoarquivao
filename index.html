@@ -1223,7 +1223,7 @@
     <div id="display-round" class="round-indicator">1ª Rodada • Pergunta 1 de 15</div>
     <div id="timer-container" class="timer-box">
       <span class="timer-label">Tempo</span>
-      <span id="display-timer" class="timer-value">120</span>
+      <span id="display-timer" class="timer-value">100</span>
     </div>
   </div>
 
@@ -1733,7 +1733,7 @@
   let currentQuestionIdx = 0;
   let selectedOptionIdx = null;
   let timerInterval = null;
-  let timeLeft = 120;
+  let timeLeft = 100;
   let isLocked = false;
   let helpsUsed = { universitarios: false, participantes: false, cartas: false };
   let eliminadasNaQuestao = [];
@@ -1848,7 +1848,7 @@
 
   function iniciarCronometro() {
     pararCronometro();
-    timeLeft = 120;
+    timeLeft = 100;
     const timerEl = document.getElementById("display-timer");
     const boxEl = document.getElementById("timer-container");
     timerEl.textContent = timeLeft;
@@ -1895,7 +1895,7 @@
     playSfx("tempoEsgotado", () => {
       playSfx("desistiuFinal");
     });
-    exibirTelaFinal("tempo", "R$ 0", "Seu tempo de 120 segundos acabou! Você perdeu tudo.");
+    exibirTelaFinal("tempo", "R$ 0", "Seu tempo de 100 segundos acabou! Você perdeu tudo.");
   }
 
   function selecionarAlternativa(idx) {
