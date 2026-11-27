@@ -1414,7 +1414,7 @@
 
 <script>
   const CLOUD_API_URL = "https://show-do-arquivao-default-rtdb.firebaseio.com/scores.json";
-  const CLOUD_QUESTOES_URL = "https://show-do-arquivao-default-rtdb.firebaseio.com/questoes.json";
+  const CLOUD_QUESTOES_URL = "https://show-do-arquivao-default-rtdb.firebaseio.com/questoes_historico.json";
 
   const AUDIO_FILES = {
     abertura1: "Show do arquivão 2.mp3",
@@ -1713,7 +1713,7 @@
     }
   ];
 
-  const QUESTOES_STORAGE_KEY = "show_arquivao_questoes_v1";
+  const QUESTOES_STORAGE_KEY = "show_arquivao_questoes_v2";
 
   function carregarBancoQuestoes() {
     try {
@@ -1728,7 +1728,7 @@
 
   let QUESTOES = carregarBancoQuestoes();
 
-  function fetchComTimeout(url, options = {}, timeoutMs = 6000) {
+  function fetchComTimeout(url, options = {}, timeoutMs = 5000) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeoutMs);
     return fetch(url, { ...options, signal: controller.signal })
@@ -1741,17 +1741,24 @@
       const res = await fetchComTimeout(CLOUD_QUESTOES_URL + "?t=" + Date.now(), { cache: "no-store" }, 5000);
       if (!res.ok) return QUESTOES;
       const data = await res.json();
-      let listaRemota = [];
-      if (Array.isArray(data)) {
-        listaRemota = data.filter(Boolean);
-      } else if (data && typeof data === "object") {
-        listaRemota = Object.values(data).filter(Boolean);
-      }
-      if (listaRemota.length > 0) {
-        QUESTOES = listaRemota;
-        try {
-          localStorage.setItem(QUESTOES_STORAGE_KEY, JSON.stringify(QUESTOES));
-        } catch (e) {}
+      if (data && typeof data === "object") {
+        const registros = Object.values(data).filter(Boolean);
+        if (registros.length > 0) {
+          registros.sort((a, b) => (b.atualizadoEm || 0) - (a.atualizadoEm || 0));
+          const maisRecente = registros[0];
+          let listaRemota = [];
+          if (typeof maisRecente.questoes_json === "string") {
+            listaRemota = JSON.parse(maisRecente.questoes_json);
+          } else if (Array.isArray(maisRecente.questoes)) {
+            listaRemota = maisRecente.questoes;
+          }
+          if (Array.isArray(listaRemota) && listaRemota.length > 0) {
+            QUESTOES = listaRemota;
+            try {
+              localStorage.setItem(QUESTOES_STORAGE_KEY, JSON.stringify(QUESTOES));
+            } catch (e) {}
+          }
+        }
       }
     } catch (e) {}
     return QUESTOES;
@@ -1765,11 +1772,15 @@
 
     if (CLOUD_QUESTOES_URL) {
       try {
+        const payload = {
+          atualizadoEm: Date.now(),
+          questoes_json: JSON.stringify(QUESTOES)
+        };
         const resp = await fetchComTimeout(CLOUD_QUESTOES_URL, {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(QUESTOES)
-        }, 6000);
+          body: JSON.stringify(payload)
+        }, 5000);
         if (!resp.ok) {
           const errText = await resp.text();
           alert("Erro ao gravar no Firebase (" + resp.status + "): " + errText);
@@ -1777,11 +1788,7 @@
         }
         return true;
       } catch (e) {
-        if (e.name === "AbortError") {
-          alert("Tempo esgotado (6s) ao tentar conectar no Firebase. Verifique sua internet ou se o site está hospedado em HTTPS.");
-        } else {
-          alert("Falha de conexão ao salvar no Firebase: " + e.message);
-        }
+        alert("Não foi possível enviar para a nuvem (" + e.message + "), mas ficou salvo neste aparelho.");
         return false;
       }
     }
@@ -2322,7 +2329,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
-        }, 6000);
+        }, 5000);
         if (!resp.ok) throw new Error("Erro HTTP " + resp.status);
         btnScore.textContent = "✅ Score enviado para a nuvem do professor!";
         return;
@@ -2394,7 +2401,7 @@
     if (CLOUD_API_URL && CLOUD_API_URL.trim() !== "") {
       statusMsg.textContent = "☁️ Buscando scores no Firebase...";
       try {
-        const res = await fetchComTimeout(CLOUD_API_URL + "?t=" + Date.now(), { cache: "no-store" }, 6000);
+        const res = await fetchComTimeout(CLOUD_API_URL + "?t=" + Date.now(), { cache: "no-store" }, 5000);
         if (!res.ok) throw new Error("Erro HTTP " + res.status);
         const data = await res.json();
         let remotos = [];
@@ -2445,7 +2452,7 @@
     }).join("");
   }
 
-  // GERENCIADOR DO BANCO DE PERGUNTAS (SINCRONIZADO COM FIREBASE + LOCAL)
+  // GERENCIADOR DO BANCO DE PERGUNTAS (POST NO FIREBASE + LOCAL)
   function renderizarBancoPerguntas() {
     const listEl = document.getElementById("banco-perguntas-list");
     if (QUESTOES.length === 0) {
@@ -2522,8 +2529,6 @@
 
       if (salvouNuvem) {
         alert("✅ Pergunta salva e sincronizada com todos os dispositivos!");
-      } else {
-        alert("⚠️ Pergunta salva localmente neste aparelho, mas não gravou na nuvem.");
       }
     } finally {
       if (btnSalvar) {
