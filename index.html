@@ -91,7 +91,7 @@
     padding-bottom: 5vh;
   }
 
-@media (max-width: 768px), (orientation: portrait) {
+  @media (max-width: 768px), (orientation: portrait) {
     #screen-entrada {
       background-image: url('imagem cel.jpg');
       background-size: 100% 100%;
@@ -875,7 +875,7 @@
     font-size: 2rem;
   }
 
-  /* CARTAS DE BARALHO COM IMAGENS DO GITHUB */
+  /* CARTAS DE BARALHO */
   .cards-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1223,7 +1223,7 @@
     <div id="display-round" class="round-indicator">1ª Rodada • Pergunta 1 de 15</div>
     <div id="timer-container" class="timer-box">
       <span class="timer-label">Tempo</span>
-      <span id="display-timer" class="timer-value">100</span>
+      <span id="display-timer" class="timer-value">120</span>
     </div>
   </div>
 
@@ -1414,6 +1414,7 @@
 
 <script>
   const CLOUD_API_URL = "https://show-do-arquivao-default-rtdb.firebaseio.com/scores.json";
+  const CLOUD_QUESTOES_URL = "https://show-do-arquivao-default-rtdb.firebaseio.com/questoes.json";
 
   const AUDIO_FILES = {
     abertura1: "Show do arquivão 2.mp3",
@@ -1520,7 +1521,10 @@
     }).catch(() => {});
   }
 
-  document.addEventListener("DOMContentLoaded", iniciarSequenciaAbertura);
+  document.addEventListener("DOMContentLoaded", () => {
+    iniciarSequenciaAbertura();
+    sincronizarQuestoesNuvem();
+  });
   window.addEventListener("load", iniciarSequenciaAbertura);
   ["pointerdown", "touchstart", "keydown", "mousemove"].forEach(evt => {
     document.addEventListener(evt, () => {
@@ -1712,28 +1716,62 @@
   const QUESTOES_STORAGE_KEY = "show_arquivao_questoes_v1";
 
   function carregarBancoQuestoes() {
-    const salvo = localStorage.getItem(QUESTOES_STORAGE_KEY);
-    if (salvo) {
-      try {
+    try {
+      const salvo = localStorage.getItem(QUESTOES_STORAGE_KEY);
+      if (salvo) {
         const parsed = JSON.parse(salvo);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
     return JSON.parse(JSON.stringify(QUESTOES_PADRAO));
   }
 
   let QUESTOES = carregarBancoQuestoes();
 
-  function salvarBancoQuestoes() {
+  async function sincronizarQuestoesNuvem() {
+    if (!CLOUD_QUESTOES_URL) return QUESTOES;
+    try {
+      const res = await fetch(CLOUD_QUESTOES_URL);
+      if (!res.ok) return QUESTOES;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        QUESTOES = data.filter(Boolean);
+        try {
+          localStorage.setItem(QUESTOES_STORAGE_KEY, JSON.stringify(QUESTOES));
+        } catch (e) {}
+      }
+    } catch (e) {}
+    return QUESTOES;
+  }
+
+  async function salvarBancoQuestoes() {
     QUESTOES.forEach((q, idx) => { q.numero = idx + 1; });
-    localStorage.setItem(QUESTOES_STORAGE_KEY, JSON.stringify(QUESTOES));
+    try {
+      localStorage.setItem(QUESTOES_STORAGE_KEY, JSON.stringify(QUESTOES));
+    } catch (e) {}
+
+    if (CLOUD_QUESTOES_URL) {
+      try {
+        const resp = await fetch(CLOUD_QUESTOES_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(QUESTOES)
+        });
+        if (!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        return true;
+      } catch (e) {
+        console.warn("Erro ao salvar perguntas no Firebase:", e);
+        return false;
+      }
+    }
+    return true;
   }
 
   let playerName = "";
   let currentQuestionIdx = 0;
   let selectedOptionIdx = null;
   let timerInterval = null;
-  let timeLeft = 100;
+  let timeLeft = 120;
   let isLocked = false;
   let helpsUsed = { universitarios: false, participantes: false, cartas: false };
   let eliminadasNaQuestao = [];
@@ -1757,6 +1795,7 @@
 
   function irParaTelaNome() {
     QUESTOES = carregarBancoQuestoes();
+    sincronizarQuestoesNuvem();
     aberturaIniciada = true;
     stopAllAudio();
     showScreen("screen-nome");
@@ -1848,7 +1887,7 @@
 
   function iniciarCronometro() {
     pararCronometro();
-    timeLeft = 100;
+    timeLeft = 120;
     const timerEl = document.getElementById("display-timer");
     const boxEl = document.getElementById("timer-container");
     timerEl.textContent = timeLeft;
@@ -1895,7 +1934,7 @@
     playSfx("tempoEsgotado", () => {
       playSfx("desistiuFinal");
     });
-    exibirTelaFinal("tempo", "R$ 0", "Seu tempo de 100 segundos acabou! Você perdeu tudo.");
+    exibirTelaFinal("tempo", "R$ 0", "Seu tempo de 120 segundos acabou! Você perdeu tudo.");
   }
 
   function selecionarAlternativa(idx) {
@@ -2240,9 +2279,11 @@
     btnScore.disabled = true;
     btnScore.textContent = "⏳ Enviando score...";
 
-    const lista = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    lista.unshift(resultadoFinalAtual);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+    try {
+      const lista = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      lista.unshift(resultadoFinalAtual);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+    } catch (e) {}
 
     if (CLOUD_API_URL && CLOUD_API_URL.trim() !== "") {
       try {
@@ -2294,11 +2335,12 @@
     setTimeout(() => document.getElementById("input-senha-prof").focus(), 100);
   }
 
-  function verificarSenhaProfessor() {
+  async function verificarSenhaProfessor() {
     const senha = document.getElementById("input-senha-prof").value;
     if (senha === "vivalavida") {
       fecharModal("modal-senha-prof");
       if (destinoSenhaAposLogin === "banco") {
+        await sincronizarQuestoesNuvem();
         limparFormularioBanco();
         renderizarBancoPerguntas();
         showScreen("screen-banco");
@@ -2317,7 +2359,7 @@
 
   function limparScoresProfessor() {
     if (confirm("Tem certeza que deseja apagar os registros salvos localmente neste aparelho?")) {
-      localStorage.removeItem(STORAGE_KEY);
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
       carregarScoresNuvem();
     }
   }
@@ -2325,7 +2367,8 @@
   async function carregarScoresNuvem() {
     const container = document.getElementById("professor-scores-list");
     const statusMsg = document.getElementById("cloud-status-msg");
-    let lista = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    let lista = [];
+    try { lista = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch (e) {}
 
     if (CLOUD_API_URL && CLOUD_API_URL.trim() !== "") {
       statusMsg.textContent = "☁️ Buscando scores no Firebase...";
@@ -2381,7 +2424,7 @@
     }).join("");
   }
 
-  // GERENCIADOR DO BANCO DE PERGUNTAS
+  // GERENCIADOR DO BANCO DE PERGUNTAS (SINCRONIZADO COM FIREBASE + LOCAL)
   function renderizarBancoPerguntas() {
     const listEl = document.getElementById("banco-perguntas-list");
     if (QUESTOES.length === 0) {
@@ -2410,7 +2453,7 @@
     `).join("");
   }
 
-  function salvarPerguntaBanco() {
+  async function salvarPerguntaBanco() {
     const enunciado = document.getElementById("bank-enunciado").value.trim();
     const alt0 = document.getElementById("bank-alt-0").value.trim();
     const alt1 = document.getElementById("bank-alt-1").value.trim();
@@ -2445,9 +2488,15 @@
       QUESTOES.push(novaQuestao);
     }
 
-    salvarBancoQuestoes();
+    const salvouNuvem = await salvarBancoQuestoes();
     limparFormularioBanco();
     renderizarBancoPerguntas();
+
+    if (salvouNuvem) {
+      alert("✅ Pergunta salva e sincronizada com todos os dispositivos!");
+    } else {
+      alert("⚠️ Pergunta salva neste aparelho, mas não foi possível gravar no Firebase (verifique as regras de escrita do banco).");
+    }
   }
 
   function editarPerguntaBanco(idx) {
@@ -2468,14 +2517,14 @@
     document.getElementById("screen-banco").scrollIntoView({ behavior: "smooth" });
   }
 
-  function excluirPerguntaBanco(idx) {
+  async function excluirPerguntaBanco(idx) {
     if (QUESTOES.length <= 1) {
       alert("O jogo precisa ter pelo menos 1 pergunta cadastrada.");
       return;
     }
     if (confirm(`Deseja realmente excluir a Pergunta ${idx + 1}?`)) {
       QUESTOES.splice(idx, 1);
-      salvarBancoQuestoes();
+      await salvarBancoQuestoes();
       renderizarBancoPerguntas();
     }
   }
@@ -2492,12 +2541,13 @@
     document.getElementById("btn-cancelar-edicao").style.display = "none";
   }
 
-  function restaurarPerguntasPadrao() {
+  async function restaurarPerguntasPadrao() {
     if (confirm("Deseja restaurar as 15 perguntas originais e apagar alterações?")) {
       QUESTOES = JSON.parse(JSON.stringify(QUESTOES_PADRAO));
-      salvarBancoQuestoes();
+      await salvarBancoQuestoes();
       limparFormularioBanco();
       renderizarBancoPerguntas();
+      alert("✅ Perguntas padrão restauradas!");
     }
   }
 </script>
