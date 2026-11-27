@@ -1334,7 +1334,7 @@
         <input type="text" id="bank-errar" class="bank-input" placeholder="Valor Errar (ex: R$ 0)" value="R$ 0">
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn-confirm-yes" style="font-size:1rem; padding:10px 24px;" onclick="salvarPerguntaBanco()">💾 Salvar Pergunta</button>
+        <button id="btn-salvar-pergunta" class="btn-confirm-yes" style="font-size:1rem; padding:10px 24px;" onclick="salvarPerguntaBanco()">💾 Salvar Pergunta</button>
         <button id="btn-cancelar-edicao" class="btn-glass" style="display:none;" onclick="limparFormularioBanco()">Cancelar Edição</button>
       </div>
     </div>
@@ -1731,11 +1731,17 @@
   async function sincronizarQuestoesNuvem() {
     if (!CLOUD_QUESTOES_URL) return QUESTOES;
     try {
-      const res = await fetch(CLOUD_QUESTOES_URL);
+      const res = await fetch(CLOUD_QUESTOES_URL + "?t=" + Date.now(), { cache: "no-store" });
       if (!res.ok) return QUESTOES;
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        QUESTOES = data.filter(Boolean);
+      let listaRemota = [];
+      if (Array.isArray(data)) {
+        listaRemota = data.filter(Boolean);
+      } else if (data && typeof data === "object") {
+        listaRemota = Object.values(data).filter(Boolean);
+      }
+      if (listaRemota.length > 0) {
+        QUESTOES = listaRemota;
         try {
           localStorage.setItem(QUESTOES_STORAGE_KEY, JSON.stringify(QUESTOES));
         } catch (e) {}
@@ -1757,10 +1763,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(QUESTOES)
         });
-        if (!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        if (!resp.ok) {
+          const errText = await resp.text();
+          alert("Erro ao gravar no Firebase (" + resp.status + "): " + errText);
+          return false;
+        }
         return true;
       } catch (e) {
-        console.warn("Erro ao salvar perguntas no Firebase:", e);
+        alert("Falha de rede ao salvar no Firebase: " + e.message);
         return false;
       }
     }
@@ -1793,15 +1803,15 @@
     document.getElementById(modalId).classList.remove("active");
   }
 
-  function irParaTelaNome() {
+  async function irParaTelaNome() {
     QUESTOES = carregarBancoQuestoes();
-    sincronizarQuestoesNuvem();
     aberturaIniciada = true;
     stopAllAudio();
     showScreen("screen-nome");
     document.getElementById("input-player-name").value = "";
     setTimeout(() => document.getElementById("input-player-name").focus(), 100);
     playSfx("nome");
+    await sincronizarQuestoesNuvem();
   }
 
   function confirmarNome() {
@@ -2373,7 +2383,7 @@
     if (CLOUD_API_URL && CLOUD_API_URL.trim() !== "") {
       statusMsg.textContent = "☁️ Buscando scores no Firebase...";
       try {
-        const res = await fetch(CLOUD_API_URL);
+        const res = await fetch(CLOUD_API_URL + "?t=" + Date.now(), { cache: "no-store" });
         if (!res.ok) throw new Error("Erro HTTP " + res.status);
         const data = await res.json();
         let remotos = [];
@@ -2471,6 +2481,12 @@
       return;
     }
 
+    const btnSalvar = document.getElementById("btn-salvar-pergunta");
+    if (btnSalvar) {
+      btnSalvar.disabled = true;
+      btnSalvar.textContent = "⏳ Salvando...";
+    }
+
     const novaQuestao = {
       numero: editIdx >= 0 ? editIdx + 1 : QUESTOES.length + 1,
       rodada,
@@ -2492,10 +2508,15 @@
     limparFormularioBanco();
     renderizarBancoPerguntas();
 
+    if (btnSalvar) {
+      btnSalvar.disabled = false;
+      btnSalvar.textContent = "💾 Salvar Pergunta";
+    }
+
     if (salvouNuvem) {
       alert("✅ Pergunta salva e sincronizada com todos os dispositivos!");
     } else {
-      alert("⚠️ Pergunta salva neste aparelho, mas não foi possível gravar no Firebase (verifique as regras de escrita do banco).");
+      alert("⚠️ Pergunta salva localmente, mas não foi possível gravar no Firebase.");
     }
   }
 
