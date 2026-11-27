@@ -2489,9 +2489,14 @@
     const alt3 = document.getElementById("bank-alt-3").value.trim();
     const correta = parseInt(document.getElementById("bank-correta").value, 10);
     const rodada = document.getElementById("bank-rodada").value.trim() || "1ª RODADA — FÁCEIS";
-    const acertou = document.getElementById("bank-acertou").value.trim() || "R$ 1.000";
-    const parar = document.getElementById("bank-parar").value.trim() || "R$ 0";
-    const errar = document.getElementById("bank-errar").value.trim() || "R$ 0";
+
+    const acertouEl = document.getElementById("bank-acertou") || document.getElementById("bank-acertar");
+    const parouEl = document.getElementById("bank-parar") || document.getElementById("bank-parou");
+    const errouEl = document.getElementById("bank-errar") || document.getElementById("bank-errou");
+
+    const acertou = acertouEl ? acertouEl.value.trim() : "R$ 1.000";
+    const parou = parouEl ? parouEl.value.trim() : "R$ 0";
+    const errar = errouEl ? errouEl.value.trim() : "R$ 0";
     const editIdx = parseInt(document.getElementById("edit-q-index").value, 10);
 
     if (!enunciado || !alt0 || !alt1 || !alt2 || !alt3) {
@@ -2514,7 +2519,7 @@
         correta,
         acertou,
         parou,
-        errar
+        errou: errar
       };
 
       if (editIdx >= 0) {
@@ -2549,9 +2554,14 @@
     document.getElementById("bank-alt-3").value = q.alternativas[3];
     document.getElementById("bank-correta").value = q.correta;
     document.getElementById("bank-rodada").value = q.rodada;
-    document.getElementById("bank-acertou").value = q.acertou;
-    document.getElementById("bank-parar").value = q.parou;
-    document.getElementById("bank-errar").value = q.errar;
+
+    const acertouEl = document.getElementById("bank-acertou") || document.getElementById("bank-acertar");
+    const parouEl = document.getElementById("bank-parar") || document.getElementById("bank-parou");
+    const errouEl = document.getElementById("bank-errar") || document.getElementById("bank-errou");
+    if (acertouEl) acertouEl.value = q.acertou;
+    if (parouEl) parouEl.value = q.parou;
+    if (errouEl) errouEl.value = q.errou;
+
     document.getElementById("btn-cancelar-edicao").style.display = "inline-block";
     document.getElementById("screen-banco").scrollIntoView({ behavior: "smooth" });
   }
