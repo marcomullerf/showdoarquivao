@@ -44,6 +44,7 @@
     display: none;
     width: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
     position: relative;
     flex-direction: column;
     align-items: center;
@@ -78,39 +79,32 @@
     color: #ffffff;
   }
 
- /* TELA DE ENTRADA COM HOLOFOTES E IMAGEM RESPONSIVA */
+  /* TELA DE ENTRADA COM HOLOFOTES E IMAGEM RESPONSIVA (PC vs CELULAR) */
   #screen-entrada {
-    background-color: #020824;
-    background-image: radial-gradient(circle at center, #0e2a7a 0%, #020824 100%);
-    min-height: 100vh;
-    min-height: 100dvh;
-    overflow: hidden;
-    justify-content: flex-end;
-    padding-bottom: 5vh;
-    position: relative;
-  }
-
-  #screen-entrada::before {
-    content: "";
-    position: absolute;
-    inset: 0;
+    background-color: #00081c;
     background-image: url('entrada.jpg');
     background-size: 100% 100%;
     background-position: center center;
     background-repeat: no-repeat;
-    z-index: 1;
+    overflow: hidden;
+    justify-content: flex-end;
+    padding-bottom: 5vh;
   }
 
-  @media (max-width: 768px), (orientation: portrait) {
+@media (max-width: 768px), (orientation: portrait) {
     #screen-entrada {
-      justify-content: space-between;
-      padding-top: 56px;
-      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      background-image: url('imagem cel.jpg');
+      background-size: 100% 100%;
+      background-position: center center;
+      justify-content: flex-end;
     }
 
-    #screen-entrada::before {
-      background-size: contain;
-      background-position: center 36%;
+    #screen-entrada .entrada-controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: max(22px, env(safe-area-inset-bottom));
+      z-index: 20;
     }
   }
 
@@ -1419,7 +1413,6 @@
 </div>
 
 <script>
-  // URL do Firebase Realtime Database configurada para sincronizar scores entre dispositivos
   const CLOUD_API_URL = "https://show-do-arquivao-default-rtdb.firebaseio.com/scores.json";
 
   const AUDIO_FILES = {
@@ -2239,9 +2232,6 @@
     iniciarSequenciaAbertura();
   }
 
-  // =========================================================================
-  // SCORES (SALVAMENTO LOCAL + SINCRONIZAÇÃO NO FIREBASE)
-  // =========================================================================
   const STORAGE_KEY = "show_arquivao_scores_v1";
 
   async function enviarScoreProfessor() {
@@ -2391,9 +2381,7 @@
     }).join("");
   }
 
-  // =========================================================================
   // GERENCIADOR DO BANCO DE PERGUNTAS
-  // =========================================================================
   function renderizarBancoPerguntas() {
     const listEl = document.getElementById("banco-perguntas-list");
     if (QUESTOES.length === 0) {
