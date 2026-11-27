@@ -54,21 +54,63 @@
     display: flex;
   }
 
-  /* TELA DE ENTRADA COM HOLOFOTES E IMAGEM EM TELA CHEIA */
+  /* BOTÃO DISCRETO BANCO DE PERGUNTAS NO CANTO SUPERIOR */
+  .btn-discreto-topo {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 30;
+    background: rgba(3, 11, 43, 0.55);
+    border: 1px solid rgba(255, 215, 0, 0.45);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 6px 13px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease;
+  }
+
+  .btn-discreto-topo:hover {
+    background: rgba(21, 64, 184, 0.9);
+    border-color: var(--amarelo-ouro);
+    color: #ffffff;
+  }
+
+ /* TELA DE ENTRADA COM HOLOFOTES E IMAGEM RESPONSIVA */
   #screen-entrada {
-    background-color: #00081c;
+    background-color: #020824;
+    background-image: radial-gradient(circle at center, #0e2a7a 0%, #020824 100%);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    justify-content: flex-end;
+    padding-bottom: 5vh;
+    position: relative;
+  }
+
+  #screen-entrada::before {
+    content: "";
+    position: absolute;
+    inset: 0;
     background-image: url('entrada.jpg');
     background-size: 100% 100%;
     background-position: center center;
     background-repeat: no-repeat;
-    overflow: hidden;
-    justify-content: flex-end;
-    padding-bottom: 5vh;
+    z-index: 1;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 768px), (orientation: portrait) {
     #screen-entrada {
-      background-size: cover;
+      justify-content: space-between;
+      padding-top: 56px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    #screen-entrada::before {
+      background-size: contain;
+      background-position: center 36%;
     }
   }
 
@@ -228,6 +270,7 @@
     outline: none;
     margin-bottom: 22px;
     box-shadow: inset 0 3px 10px rgba(0,0,0,0.8);
+    user-select: text;
   }
 
   .input-nome:focus {
@@ -534,37 +577,51 @@
     white-space: nowrap;
   }
 
-  /* VIBRAÇÃO EM VERMELHO (ERRADA) E VERDE (CERTA) SEM SUMIR */
+  /* PISCAR NO LUGAR EM VERMELHO (ERRADA) E VERDE (CERTA) */
   .alt-btn.wrong-vibrate {
     opacity: 1 !important;
-    background: linear-gradient(180deg, #ff1744 0%, #8f001a 100%) !important;
+    transform: translateX(0) !important;
     border-color: #ff8a80 !important;
-    box-shadow: 0 0 28px rgba(255, 23, 68, 1) !important;
-    animation: vibrateBox 0.14s linear infinite !important;
+    animation: blinkRed 0.26s ease-in-out infinite alternate !important;
   }
 
   .alt-btn.wrong-vibrate .alt-text {
     color: #ffffff !important;
+    font-weight: 600;
   }
 
   .alt-btn.correct-vibrate {
     opacity: 1 !important;
-    background: linear-gradient(180deg, #00e676 0%, #007032 100%) !important;
+    transform: translateX(0) !important;
     border-color: #b9f6ca !important;
-    box-shadow: 0 0 28px rgba(0, 230, 118, 1) !important;
-    animation: vibrateBox 0.16s linear infinite !important;
+    animation: blinkGreen 0.28s ease-in-out infinite alternate !important;
   }
 
   .alt-btn.correct-vibrate .alt-text {
     color: #ffffff !important;
+    font-weight: 600;
   }
 
-  @keyframes vibrateBox {
-    0% { transform: translate(0, 0); }
-    25% { transform: translate(-5px, 2px); }
-    50% { transform: translate(5px, -2px); }
-    75% { transform: translate(-4px, -2px); }
-    100% { transform: translate(4px, 2px); }
+  @keyframes blinkRed {
+    0% {
+      background: linear-gradient(180deg, #b71c1c 0%, #5c0008 100%);
+      box-shadow: 0 0 8px rgba(255, 23, 68, 0.4);
+    }
+    100% {
+      background: linear-gradient(180deg, #ff5252 0%, #d50000 100%);
+      box-shadow: 0 0 30px rgba(255, 82, 82, 1);
+    }
+  }
+
+  @keyframes blinkGreen {
+    0% {
+      background: linear-gradient(180deg, #007032 0%, #003d19 100%);
+      box-shadow: 0 0 8px rgba(0, 230, 118, 0.4);
+    }
+    100% {
+      background: linear-gradient(180deg, #00e676 0%, #00b248 100%);
+      box-shadow: 0 0 30px rgba(0, 230, 118, 1);
+    }
   }
 
   /* COLUNA DIREITA: BARRAS DE OURO E AÇÕES */
@@ -966,8 +1023,9 @@
     cursor: pointer;
   }
 
-  /* PÁGINA DO PROFESSOR */
-  #screen-professor {
+  /* PÁGINA DO PROFESSOR E BANCO DE PERGUNTAS */
+  #screen-professor,
+  #screen-banco {
     justify-content: flex-start;
     padding: 24px 16px;
   }
@@ -1053,12 +1111,85 @@
     border-left: 4px solid #ff1744;
     color: #ffcdd2;
   }
+
+  /* FORMULÁRIO DO BANCO DE PERGUNTAS */
+  .bank-form {
+    background: rgba(2, 8, 36, 0.9);
+    border: 2px solid var(--amarelo-ouro);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bank-form h3 {
+    font-family: 'Oswald', sans-serif;
+    color: var(--amarelo-ouro);
+    font-size: 1.35rem;
+    text-transform: uppercase;
+  }
+
+  .bank-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  @media (max-width: 650px) {
+    .bank-grid-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .bank-input, .bank-select {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 2px solid #2b54c7;
+    background: #040d33;
+    color: #ffffff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.92rem;
+    user-select: text;
+  }
+
+  .bank-input:focus, .bank-select:focus {
+    outline: none;
+    border-color: var(--amarelo-ouro);
+  }
+
+  .bank-item-card {
+    background: rgba(2, 8, 36, 0.85);
+    border: 2px solid #2b54c7;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .bank-item-info {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .bank-item-actions {
+    display: flex;
+    gap: 8px;
+  }
 </style>
 </head>
 <body>
 
 <!-- TELA 1: ENTRADA -->
 <div id="screen-entrada" class="screen active">
+  <button class="btn-discreto-topo" onclick="abrirAcessoBanco()">⚙️ Banco de Perguntas</button>
+
   <div class="spotlights-container">
     <div class="spotlight spotlight-left"></div>
     <div class="spotlight spotlight-right"></div>
@@ -1163,11 +1294,58 @@
     <div class="prof-header">
       <h2>Ver Score dos Alunos</h2>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn-glass" style="border-color:#ff5252; color:#ffcdd2;" onclick="limparScoresProfessor()">🗑️ Limpar Registros</button>
+        <button class="btn-glass" onclick="carregarScoresNuvem()">🔄 Atualizar Lista</button>
+        <button class="btn-glass" style="border-color:#ff5252; color:#ffcdd2;" onclick="limparScoresProfessor()">🗑️ Limpar Local</button>
         <button class="btn-glass" onclick="voltarDoProfessor()">⬅ Voltar</button>
       </div>
     </div>
+    <p id="cloud-status-msg" style="font-size:0.85rem; color:#ffe680; margin-bottom:14px;"></p>
     <div id="professor-scores-list"></div>
+  </div>
+</div>
+
+<!-- TELA 7: BANCO DE PERGUNTAS (ACESSO RESTRITO) -->
+<div id="screen-banco" class="screen">
+  <div class="prof-container">
+    <div class="prof-header">
+      <h2>Banco de Perguntas</h2>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-glass" style="border-color:#ff9800; color:#ffe0b2;" onclick="restaurarPerguntasPadrao()">↺ Restaurar Padrão</button>
+        <button class="btn-glass" onclick="showScreen('screen-entrada')">⬅ Voltar ao Início</button>
+      </div>
+    </div>
+
+    <div class="bank-form">
+      <h3 id="bank-form-title">Adicionar Nova Pergunta</h3>
+      <input type="hidden" id="edit-q-index" value="-1">
+      <input type="text" id="bank-enunciado" class="bank-input" placeholder="Digite o enunciado da pergunta...">
+      <div class="bank-grid-2">
+        <input type="text" id="bank-alt-0" class="bank-input" placeholder="Alternativa 1">
+        <input type="text" id="bank-alt-1" class="bank-input" placeholder="Alternativa 2">
+        <input type="text" id="bank-alt-2" class="bank-input" placeholder="Alternativa 3">
+        <input type="text" id="bank-alt-3" class="bank-input" placeholder="Alternativa 4">
+      </div>
+      <div class="bank-grid-2">
+        <select id="bank-correta" class="bank-select">
+          <option value="0">Resposta Correta: Alternativa 1</option>
+          <option value="1">Resposta Correta: Alternativa 2</option>
+          <option value="2">Resposta Correta: Alternativa 3</option>
+          <option value="3">Resposta Correta: Alternativa 4</option>
+        </select>
+        <input type="text" id="bank-rodada" class="bank-input" placeholder="Ex: 1ª RODADA — FÁCEIS" value="1ª RODADA — FÁCEIS">
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+        <input type="text" id="bank-acertou" class="bank-input" placeholder="Valor Acertar (ex: R$ 1.000)" value="R$ 1.000">
+        <input type="text" id="bank-parar" class="bank-input" placeholder="Valor Parar (ex: R$ 0)" value="R$ 0">
+        <input type="text" id="bank-errar" class="bank-input" placeholder="Valor Errar (ex: R$ 0)" value="R$ 0">
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-confirm-yes" style="font-size:1rem; padding:10px 24px;" onclick="salvarPerguntaBanco()">💾 Salvar Pergunta</button>
+        <button id="btn-cancelar-edicao" class="btn-glass" style="display:none;" onclick="limparFormularioBanco()">Cancelar Edição</button>
+      </div>
+    </div>
+
+    <div id="banco-perguntas-list"></div>
   </div>
 </div>
 
@@ -1227,11 +1405,11 @@
   </div>
 </div>
 
-<!-- MODAL: SENHA DO PROFESSOR -->
+<!-- MODAL: SENHA DO PROFESSOR / BANCO -->
 <div id="modal-senha-prof" class="modal-overlay">
   <div class="modal-card">
-    <h3>Ver Score dos Alunos</h3>
-    <p>Área bloqueada. Digite a senha do professor:</p>
+    <h3 id="modal-senha-titulo">Área Restrita</h3>
+    <p>Digite a senha de acesso do professor:</p>
     <input type="password" id="input-senha-prof" class="input-nome" placeholder="Senha..." onkeydown="if(event.key==='Enter') verificarSenhaProfessor()">
     <div class="modal-btn-row">
       <button class="btn-confirm-yes" onclick="verificarSenhaProfessor()">Entrar</button>
@@ -1241,6 +1419,9 @@
 </div>
 
 <script>
+  // URL do Firebase Realtime Database configurada para sincronizar scores entre dispositivos
+  const CLOUD_API_URL = "https://show-do-arquivao-default-rtdb.firebaseio.com/scores.json";
+
   const AUDIO_FILES = {
     abertura1: "Show do arquivão 2.mp3",
     abertura2: "abertura.mp3",
@@ -1263,7 +1444,9 @@
     tempoEsgotado: "tempo acabou.mp3",
     confirmarDesistir: "posso entregar o ouro.mp3",
     desistiuFinal: "fim.mp3",
-    ganhouMilhao: "ganhou.mp3"
+    ganhouMilhao: "ganhou.mp3",
+    meioMilhao: "meio milhão.mp3",
+    umMilhao: "1 milhão.mp3"
   };
 
   let currentMusic = null;
@@ -1319,10 +1502,10 @@
     };
     audio.onended = finish;
     audio.onerror = () => {
-      setTimeout(finish, 2200);
+      setTimeout(finish, 2000);
     };
     audio.play().catch(() => {
-      setTimeout(finish, 2200);
+      setTimeout(finish, 2000);
     });
     return audio;
   }
@@ -1341,20 +1524,21 @@
           playMusicLoop("abertura2");
         }
       };
-    }).catch(() => {
-      // Caso o navegador exija interação prévia, tenta no primeiro toque/clique
-    });
+    }).catch(() => {});
   }
 
+  document.addEventListener("DOMContentLoaded", iniciarSequenciaAbertura);
   window.addEventListener("load", iniciarSequenciaAbertura);
-  document.addEventListener("pointerdown", () => {
-    if (!aberturaIniciada && document.getElementById("screen-entrada").classList.contains("active")) {
-      iniciarSequenciaAbertura();
-    }
-  }, { once: true });
+  ["pointerdown", "touchstart", "keydown", "mousemove"].forEach(evt => {
+    document.addEventListener(evt, () => {
+      if (!aberturaIniciada && document.getElementById("screen-entrada").classList.contains("active")) {
+        iniciarSequenciaAbertura();
+      }
+    }, { passive: true });
+  });
 
-  // PERGUNTAS
-  const QUESTOES = [
+  // BANCO DE PERGUNTAS PADRÃO
+  const QUESTOES_PADRAO = [
     {
       numero: 1,
       rodada: "1ª RODADA — FÁCEIS",
@@ -1532,6 +1716,26 @@
     }
   ];
 
+  const QUESTOES_STORAGE_KEY = "show_arquivao_questoes_v1";
+
+  function carregarBancoQuestoes() {
+    const salvo = localStorage.getItem(QUESTOES_STORAGE_KEY);
+    if (salvo) {
+      try {
+        const parsed = JSON.parse(salvo);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return JSON.parse(JSON.stringify(QUESTOES_PADRAO));
+  }
+
+  let QUESTOES = carregarBancoQuestoes();
+
+  function salvarBancoQuestoes() {
+    QUESTOES.forEach((q, idx) => { q.numero = idx + 1; });
+    localStorage.setItem(QUESTOES_STORAGE_KEY, JSON.stringify(QUESTOES));
+  }
+
   let playerName = "";
   let currentQuestionIdx = 0;
   let selectedOptionIdx = null;
@@ -1543,6 +1747,7 @@
   let historicoRespostas = [];
   let resultadoFinalAtual = null;
   let telaAnteriorProfessor = "screen-entrada";
+  let destinoSenhaAposLogin = "professor";
 
   function showScreen(screenId) {
     document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -1558,6 +1763,7 @@
   }
 
   function irParaTelaNome() {
+    QUESTOES = carregarBancoQuestoes();
     aberturaIniciada = true;
     stopAllAudio();
     showScreen("screen-nome");
@@ -1602,8 +1808,9 @@
     isLocked = false;
     eliminadasNaQuestao = [];
 
+    const totalQ = QUESTOES.length;
     const q = QUESTOES[idx];
-    document.getElementById("display-round").textContent = `${q.rodada} • Pergunta ${q.numero} de 15`;
+    document.getElementById("display-round").textContent = `${q.rodada} • Pergunta ${idx + 1} de ${totalQ}`;
     document.getElementById("display-enunciado").textContent = q.enunciado;
     document.getElementById("val-acertar").textContent = q.acertou;
     document.getElementById("val-parar").textContent = q.parou;
@@ -1684,7 +1891,7 @@
 
     const q = QUESTOES[currentQuestionIdx];
     historicoRespostas.push({
-      numero: q.numero,
+      numero: currentQuestionIdx + 1,
       enunciado: q.enunciado,
       escolhida: "Tempo esgotado",
       corretaTexto: q.alternativas[q.correta],
@@ -1692,7 +1899,9 @@
     });
 
     stopAllAudio();
-    playSfx("tempoEsgotado");
+    playSfx("tempoEsgotado", () => {
+      playSfx("desistiuFinal");
+    });
     exibirTelaFinal("tempo", "R$ 0", "Seu tempo de 120 segundos acabou! Você perdeu tudo.");
   }
 
@@ -1731,14 +1940,13 @@
     const q = QUESTOES[currentQuestionIdx];
     const acertou = selectedOptionIdx === q.correta;
 
-    // Remove o tom claro de seleção antes de aplicar verde ou vermelho
     document.querySelectorAll(".alt-btn").forEach(b => {
       b.classList.remove("selected");
       b.classList.add("slide-in");
     });
 
     historicoRespostas.push({
-      numero: q.numero,
+      numero: currentQuestionIdx + 1,
       enunciado: q.enunciado,
       escolhida: `${selectedOptionIdx + 1}) ${q.alternativas[selectedOptionIdx]}`,
       corretaTexto: `${q.correta + 1}) ${q.alternativas[q.correta]}`,
@@ -1756,7 +1964,7 @@
           playSfx("desistiuFinal");
         });
         setTimeout(() => {
-          exibirTelaFinal("milhao", "R$ 1.000.000", "PARABÉNS! VOCÊ GANHOU UM MILHÃO DE REAIS!");
+          exibirTelaFinal("milhao", q.acertou || "R$ 1.000.000", "PARABÉNS! VOCÊ GANHOU UM MILHÃO DE REAIS!");
         }, 1600);
         return;
       }
@@ -1771,6 +1979,7 @@
       if (btnCerto) btnCerto.classList.add("correct-vibrate");
 
       playSfx("errou", () => {
+        playSfx("desistiuFinal");
         exibirTelaFinal("errou", "R$ 0", "Que pena! Você errou a resposta e perdeu tudo.");
       });
     }
@@ -1779,7 +1988,7 @@
   function avancarAposAcerto() {
     const nextIdx = currentQuestionIdx + 1;
 
-    if (currentQuestionIdx === 4) {
+    if (currentQuestionIdx === 4 && nextIdx < QUESTOES.length) {
       mostrarTelaAguarde("2ª Rodada • Perguntas de R$ 10 mil a R$ 50 mil");
       playSfx("rodada2", () => {
         carregarQuestao(nextIdx);
@@ -1787,9 +1996,25 @@
       return;
     }
 
-    if (currentQuestionIdx === 9) {
+    if (currentQuestionIdx === 9 && nextIdx < QUESTOES.length) {
       mostrarTelaAguarde("3ª Rodada • Perguntas de R$ 100 mil a R$ 1 Milhão");
       playSfx("rodada3", () => {
+        carregarQuestao(nextIdx);
+      });
+      return;
+    }
+
+    if (nextIdx === 13 && nextIdx < QUESTOES.length) {
+      mostrarTelaAguarde("Preparando Pergunta 14 • Rumo ao Meio Milhão!");
+      playSfx("meioMilhao", () => {
+        carregarQuestao(nextIdx);
+      });
+      return;
+    }
+
+    if (nextIdx === 14 && nextIdx < QUESTOES.length) {
+      mostrarTelaAguarde("A GRANDE PERGUNTA DO MILHÃO! 🏆");
+      playSfx("umMilhao", () => {
         carregarQuestao(nextIdx);
       });
       return;
@@ -1956,7 +2181,7 @@
     const q = QUESTOES[currentQuestionIdx];
     stopAllAudio();
     playSfx("desistiuFinal");
-    exibirTelaFinal("parou", q.parou, `Você decidiu parar na Pergunta ${q.numero} e garantiu seu prêmio!`);
+    exibirTelaFinal("parou", q.parou, `Você decidiu parar na Pergunta ${currentQuestionIdx + 1} e garantiu seu prêmio!`);
   }
 
   function exibirTelaFinal(tipo, premioTexto, mensagem) {
@@ -2014,16 +2239,48 @@
     iniciarSequenciaAbertura();
   }
 
+  // =========================================================================
+  // SCORES (SALVAMENTO LOCAL + SINCRONIZAÇÃO NO FIREBASE)
+  // =========================================================================
   const STORAGE_KEY = "show_arquivao_scores_v1";
 
-  function enviarScoreProfessor() {
+  async function enviarScoreProfessor() {
     if (!resultadoFinalAtual) return;
+    const btnScore = document.getElementById("btn-enviar-score");
+    btnScore.disabled = true;
+    btnScore.textContent = "⏳ Enviando score...";
+
     const lista = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     lista.unshift(resultadoFinalAtual);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 
-    const btnScore = document.getElementById("btn-enviar-score");
-    btnScore.disabled = true;
+    if (CLOUD_API_URL && CLOUD_API_URL.trim() !== "") {
+      try {
+        const payload = {
+          id: resultadoFinalAtual.id,
+          nome: resultadoFinalAtual.nome,
+          data: resultadoFinalAtual.data,
+          status: resultadoFinalAtual.status,
+          premio: resultadoFinalAtual.premio,
+          acertos: resultadoFinalAtual.acertos,
+          erros: resultadoFinalAtual.erros,
+          detalhes_json: JSON.stringify(resultadoFinalAtual.detalhes)
+        };
+        const resp = await fetch(CLOUD_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        btnScore.textContent = "✅ Score enviado para a nuvem do professor!";
+        return;
+      } catch (e) {
+        console.warn("Falha ao enviar para Firebase:", e);
+        btnScore.textContent = "✅ Salvo localmente (verifique regras do Firebase)";
+        return;
+      }
+    }
+
     btnScore.textContent = "✅ Score enviado com sucesso para o professor!";
   }
 
@@ -2032,6 +2289,16 @@
     if (activeScreen && activeScreen.id !== "screen-professor") {
       telaAnteriorProfessor = activeScreen.id;
     }
+    destinoSenhaAposLogin = "professor";
+    document.getElementById("modal-senha-titulo").textContent = "Ver Score dos Alunos";
+    document.getElementById("input-senha-prof").value = "";
+    abrirModal("modal-senha-prof");
+    setTimeout(() => document.getElementById("input-senha-prof").focus(), 100);
+  }
+
+  function abrirAcessoBanco() {
+    destinoSenhaAposLogin = "banco";
+    document.getElementById("modal-senha-titulo").textContent = "Banco de Perguntas";
     document.getElementById("input-senha-prof").value = "";
     abrirModal("modal-senha-prof");
     setTimeout(() => document.getElementById("input-senha-prof").focus(), 100);
@@ -2041,8 +2308,14 @@
     const senha = document.getElementById("input-senha-prof").value;
     if (senha === "vivalavida") {
       fecharModal("modal-senha-prof");
-      renderizarScoresProfessor();
-      showScreen("screen-professor");
+      if (destinoSenhaAposLogin === "banco") {
+        limparFormularioBanco();
+        renderizarBancoPerguntas();
+        showScreen("screen-banco");
+      } else {
+        carregarScoresNuvem();
+        showScreen("screen-professor");
+      }
     } else {
       alert("Senha incorreta! Acesso exclusivo para o professor.");
     }
@@ -2053,15 +2326,38 @@
   }
 
   function limparScoresProfessor() {
-    if (confirm("Tem certeza que deseja apagar todos os registros de scores dos alunos?")) {
+    if (confirm("Tem certeza que deseja apagar os registros salvos localmente neste aparelho?")) {
       localStorage.removeItem(STORAGE_KEY);
-      renderizarScoresProfessor();
+      carregarScoresNuvem();
     }
   }
 
-  function renderizarScoresProfessor() {
+  async function carregarScoresNuvem() {
     const container = document.getElementById("professor-scores-list");
-    const lista = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const statusMsg = document.getElementById("cloud-status-msg");
+    let lista = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+
+    if (CLOUD_API_URL && CLOUD_API_URL.trim() !== "") {
+      statusMsg.textContent = "☁️ Buscando scores no Firebase...";
+      try {
+        const res = await fetch(CLOUD_API_URL);
+        if (!res.ok) throw new Error("Erro HTTP " + res.status);
+        const data = await res.json();
+        let remotos = [];
+        if (Array.isArray(data)) {
+          remotos = data.filter(Boolean);
+        } else if (data && typeof data === "object") {
+          remotos = Object.values(data);
+        }
+        lista = remotos.map(r => ({
+          ...r,
+          detalhes: typeof r.detalhes_json === "string" ? JSON.parse(r.detalhes_json) : (r.detalhes || [])
+        })).sort((a, b) => (b.id || 0) - (a.id || 0));
+        statusMsg.textContent = "☁️ Conectado ao Firebase: exibindo resultados de todos os dispositivos.";
+      } catch (e) {
+        statusMsg.textContent = "⚠️ Não foi possível ler do Firebase (verifique as regras de leitura/escrita). Exibindo registros locais.";
+      }
+    }
 
     if (lista.length === 0) {
       container.innerHTML = `<p style="text-align:center; padding:30px; color:#cfe0ff;">Nenhum aluno enviou o score ainda.</p>`;
@@ -2093,6 +2389,128 @@
         </div>
       `;
     }).join("");
+  }
+
+  // =========================================================================
+  // GERENCIADOR DO BANCO DE PERGUNTAS
+  // =========================================================================
+  function renderizarBancoPerguntas() {
+    const listEl = document.getElementById("banco-perguntas-list");
+    if (QUESTOES.length === 0) {
+      listEl.innerHTML = `<p style="text-align:center; padding:20px; color:#cfe0ff;">Nenhuma pergunta cadastrada.</p>`;
+      return;
+    }
+
+    listEl.innerHTML = QUESTOES.map((q, idx) => `
+      <div class="bank-item-card">
+        <div class="bank-item-info">
+          <div style="font-size:0.8rem; color:#ffd700; font-weight:700; margin-bottom:4px;">
+            Pergunta ${idx + 1} • ${q.rodada} (Acertar: ${q.acertou})
+          </div>
+          <div style="font-size:1rem; color:#fff; margin-bottom:6px;">${q.enunciado}</div>
+          <div style="font-size:0.85rem; color:#cfe0ff;">
+            ${q.alternativas.map((alt, i) =>
+              `<span style="${i === q.correta ? 'color:#00e676; font-weight:700;' : ''}">${i + 1}) ${alt}</span>`
+            ).join("  |  ")}
+          </div>
+        </div>
+        <div class="bank-item-actions">
+          <button class="btn-glass" style="padding:6px 12px; font-size:0.82rem;" onclick="editarPerguntaBanco(${idx})">✏️ Editar</button>
+          <button class="btn-glass" style="padding:6px 12px; font-size:0.82rem; border-color:#ff5252; color:#ffcdd2;" onclick="excluirPerguntaBanco(${idx})">🗑️ Excluir</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function salvarPerguntaBanco() {
+    const enunciado = document.getElementById("bank-enunciado").value.trim();
+    const alt0 = document.getElementById("bank-alt-0").value.trim();
+    const alt1 = document.getElementById("bank-alt-1").value.trim();
+    const alt2 = document.getElementById("bank-alt-2").value.trim();
+    const alt3 = document.getElementById("bank-alt-3").value.trim();
+    const correta = parseInt(document.getElementById("bank-correta").value, 10);
+    const rodada = document.getElementById("bank-rodada").value.trim() || "1ª RODADA — FÁCEIS";
+    const acertou = document.getElementById("bank-acertou").value.trim() || "R$ 1.000";
+    const parar = document.getElementById("bank-parar").value.trim() || "R$ 0";
+    const errar = document.getElementById("bank-errar").value.trim() || "R$ 0";
+    const editIdx = parseInt(document.getElementById("edit-q-index").value, 10);
+
+    if (!enunciado || !alt0 || !alt1 || !alt2 || !alt3) {
+      alert("Preencha o enunciado e todas as 4 alternativas!");
+      return;
+    }
+
+    const novaQuestao = {
+      numero: editIdx >= 0 ? editIdx + 1 : QUESTOES.length + 1,
+      rodada,
+      enunciado,
+      alternativas: [alt0, alt1, alt2, alt3],
+      correta,
+      acertou,
+      parou,
+      errar
+    };
+
+    if (editIdx >= 0) {
+      QUESTOES[editIdx] = novaQuestao;
+    } else {
+      QUESTOES.push(novaQuestao);
+    }
+
+    salvarBancoQuestoes();
+    limparFormularioBanco();
+    renderizarBancoPerguntas();
+  }
+
+  function editarPerguntaBanco(idx) {
+    const q = QUESTOES[idx];
+    document.getElementById("bank-form-title").textContent = `Editando Pergunta ${idx + 1}`;
+    document.getElementById("edit-q-index").value = idx;
+    document.getElementById("bank-enunciado").value = q.enunciado;
+    document.getElementById("bank-alt-0").value = q.alternativas[0];
+    document.getElementById("bank-alt-1").value = q.alternativas[1];
+    document.getElementById("bank-alt-2").value = q.alternativas[2];
+    document.getElementById("bank-alt-3").value = q.alternativas[3];
+    document.getElementById("bank-correta").value = q.correta;
+    document.getElementById("bank-rodada").value = q.rodada;
+    document.getElementById("bank-acertou").value = q.acertou;
+    document.getElementById("bank-parar").value = q.parou;
+    document.getElementById("bank-errar").value = q.errar;
+    document.getElementById("btn-cancelar-edicao").style.display = "inline-block";
+    document.getElementById("screen-banco").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function excluirPerguntaBanco(idx) {
+    if (QUESTOES.length <= 1) {
+      alert("O jogo precisa ter pelo menos 1 pergunta cadastrada.");
+      return;
+    }
+    if (confirm(`Deseja realmente excluir a Pergunta ${idx + 1}?`)) {
+      QUESTOES.splice(idx, 1);
+      salvarBancoQuestoes();
+      renderizarBancoPerguntas();
+    }
+  }
+
+  function limparFormularioBanco() {
+    document.getElementById("bank-form-title").textContent = "Adicionar Nova Pergunta";
+    document.getElementById("edit-q-index").value = "-1";
+    document.getElementById("bank-enunciado").value = "";
+    document.getElementById("bank-alt-0").value = "";
+    document.getElementById("bank-alt-1").value = "";
+    document.getElementById("bank-alt-2").value = "";
+    document.getElementById("bank-alt-3").value = "";
+    document.getElementById("bank-correta").value = "0";
+    document.getElementById("btn-cancelar-edicao").style.display = "none";
+  }
+
+  function restaurarPerguntasPadrao() {
+    if (confirm("Deseja restaurar as 15 perguntas originais e apagar alterações?")) {
+      QUESTOES = JSON.parse(JSON.stringify(QUESTOES_PADRAO));
+      salvarBancoQuestoes();
+      limparFormularioBanco();
+      renderizarBancoPerguntas();
+    }
   }
 </script>
 </body>
